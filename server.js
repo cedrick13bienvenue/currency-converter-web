@@ -130,8 +130,8 @@ app.post("/api/convert", async (req, res) => {
   }
 });
 
-// Catch-all handler for undefined routes
-app.get("*", (req, res) => {
+// Catch-all handler for undefined routes - Express 5.x compatible
+app.use((req, res) => {
   if (req.path.startsWith("/api/")) {
     res.status(404).json({ success: false, error: "API endpoint not found" });
   } else {
