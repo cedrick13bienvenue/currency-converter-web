@@ -12,16 +12,22 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
-// Health check endpoint
-app.get("/health", (req, res) => {
-  res.json({ status: "OK", timestamp: new Date().toISOString() });
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error("Server error:", err);
+  res.status(500).json({ success: false, error: "Internal server error" });
 });
 
 // Get supported currencies
 app.get("/api/currencies", async (req, res) => {
   try {
+    console.log("Fetching currencies...");
+
     if (!API_KEY) {
-      return res.status(500).json({ error: "API key not configured" });
+      console.error("API key not configured");
+      return res
+        .status(500)
+        .json({ success: false, error: "API key not configured" });
     }
 
     const response = await axios.get(
@@ -36,13 +42,19 @@ app.get("/api/currencies", async (req, res) => {
         code: code[0],
         name: code[1],
       }));
+      console.log(`Loaded ${currencies.length} currencies`);
       res.json({ success: true, currencies });
     } else {
-      res.status(400).json({ error: "Failed to fetch currencies" });
+      console.error("API returned error:", response.data);
+      res
+        .status(400)
+        .json({ success: false, error: "Failed to fetch currencies" });
     }
   } catch (error) {
     console.error("Currency fetch error:", error.message);
-    res.status(500).json({ error: "Failed to fetch currencies" });
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to fetch currencies" });
   }
 });
 
@@ -50,18 +62,23 @@ app.get("/api/currencies", async (req, res) => {
 app.post("/api/convert", async (req, res) => {
   try {
     const { amount, from, to } = req.body;
+    console.log(`Converting ${amount} ${from} to ${to}`);
 
     // Validation
     if (!amount || !from || !to) {
-      return res.status(400).json({ error: "Missing required fields" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Missing required fields" });
     }
 
     if (isNaN(amount) || amount <= 0) {
-      return res.status(400).json({ error: "Invalid amount" });
+      return res.status(400).json({ success: false, error: "Invalid amount" });
     }
 
     if (!API_KEY) {
-      return res.status(500).json({ error: "API key not configured" });
+      return res
+        .status(500)
+        .json({ success: false, error: "API key not configured" });
     }
 
     // Same currency conversion
@@ -93,16 +110,26 @@ app.post("/api/convert", async (req, res) => {
         to,
       });
     } else {
-      res.status(400).json({ error: "Invalid currency pair" });
+      console.error("Conversion API error:", response.data);
+      res.status(400).json({ success: false, error: "Invalid currency pair" });
     }
   } catch (error) {
     console.error("Conversion error:", error.message);
 
     if (error.code === "ECONNABORTED") {
-      res.status(408).json({ error: "Request timeout" });
+      res.status(408).json({ success: false, error: "Request timeout" });
     } else {
-      res.status(500).json({ error: "Conversion failed" });
+      res.status(500).json({ success: false, error: "Conversion failed" });
     }
+  }
+});
+
+// Catch-all handler for undefined routes
+app.get("*", (req, res) => {
+  if (req.path.startsWith("/api/")) {
+    res.status(404).json({ success: false, error: "API endpoint not found" });
+  } else {
+    res.sendFile(path.join(__dirname, "public", "index.html"));
   }
 });
 
@@ -115,6 +142,9 @@ app.listen(PORT, () => {
     console.log(
       "⚠️  Warning: EXCHANGE_API_KEY not found in environment variables"
     );
+    console.log("Please set EXCHANGE_API_KEY in your .env file");
+  } else {
+    console.log("✅ API key configured");
   }
 });
 
