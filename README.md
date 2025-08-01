@@ -51,31 +51,3 @@ npm start
 # Or for development with auto-restart:
 npm run dev
 ```
-
-4. **Open browser:**
-
-```
-http://localhost:3000
-```
-
-## 🐳 Docker Deployment
-
-### Build and Test Locally
-
-```bash
-# Build image
-docker build -t currency-converter-web:v1 .
-
-# Run container
-docker run -p 3000:3000 -e EXCHANGE_API_KEY=your_api_key currency-converter-web:v1
-
-# Test
-curl http://localhost:3000/health
-```
-
-### Deploy to Docker Hub
-
-```bash
-# Tag for Docker Hub
-docker tag currency-converter-web:v1 your-dockerhub-username/currency-converter:v1
-```
