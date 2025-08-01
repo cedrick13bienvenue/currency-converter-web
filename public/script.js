@@ -9,6 +9,12 @@ const resultDisplay = document.getElementById("resultDisplay");
 const errorMessage = document.getElementById("errorMessage");
 const loading = document.getElementById("loading");
 
+// API Base URL - automatically detects environment
+const API_BASE_URL =
+  window.location.port === "5501" || window.location.port === "5500"
+    ? "http://localhost:3000"
+    : "";
+
 // Popular currencies to show first
 const popularCurrencies = [
   "USD",
@@ -31,7 +37,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 // Load currencies from API
 async function loadCurrencies() {
   try {
-    const response = await fetch("/api/currencies");
+    const response = await fetch(`${API_BASE_URL}/api/currencies`);
     const data = await response.json();
 
     if (data.success) {
@@ -40,7 +46,9 @@ async function loadCurrencies() {
       showError("Failed to load currencies");
     }
   } catch (error) {
-    showError("Failed to connect to server");
+    showError(
+      "Failed to connect to server. Make sure the server is running on port 3000."
+    );
     console.error("Error loading currencies:", error);
   }
 }
@@ -136,7 +144,7 @@ async function handleConvert() {
   hideResult();
 
   try {
-    const response = await fetch("/api/convert", {
+    const response = await fetch(`${API_BASE_URL}/api/convert`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
